@@ -38,9 +38,9 @@ import scala.util.control.NonFatal
 
 /** Holds bits of state for the interpreter, and implements [[almond.interpreter.Interpreter]]. */
 final class DynaMLJupyter(
-  params: ScalaInterpreterParams = ScalaInterpreterParams(),
-  val logCtx: LoggerContext = LoggerContext.nop
-) extends Interpreter with AsyncInterpreterOps {
+                           params: ScalaInterpreterParams = ScalaInterpreterParams(),
+                           val logCtx: LoggerContext = LoggerContext.nop
+                         ) extends Interpreter with AsyncInterpreterOps {
 
   private val log = logCtx(getClass)
 
@@ -70,7 +70,8 @@ final class DynaMLJupyter(
     storage,
     logCtx,
     params.updateBackgroundVariablesEcOpt,
-    commHandlerOpt
+    commHandlerOpt,
+    false
   )
 
 
@@ -88,7 +89,7 @@ final class DynaMLJupyter(
       )
 
     val jupyterApi =
-      new JupyterApiImpl(execute0, commHandlerOpt, replApi)
+      new JupyterApiImpl(execute0, commHandlerOpt, replApi, false)
 
     for (ec <- params.updateBackgroundVariablesEcOpt)
       UpdatableFuture.setup(replApi, jupyterApi, ec)
@@ -115,24 +116,26 @@ final class DynaMLJupyter(
   }
 
   if (!params.lazyInit)
-    // eagerly initialize ammInterp
+  // eagerly initialize ammInterp
     ammInterp
 
   override def interruptSupported: Boolean =
     true
+
   override def interrupt(): Unit =
     execute0.interrupt()
 
   override def supportComm: Boolean = true
+
   override def setCommHandler(commHandler0: CommHandler): Unit =
     commHandlerOpt = Some(commHandler0)
 
   def execute(
-    code: String,
-    storeHistory: Boolean, // FIXME Take that one into account
-    inputManager: Option[InputManager],
-    outputHandler: Option[OutputHandler]
-  ): ExecuteResult =
+               code: String,
+               storeHistory: Boolean, // FIXME Take that one into account
+               inputManager: Option[InputManager],
+               outputHandler: Option[OutputHandler]
+             ): ExecuteResult =
     execute0(ammInterp, code, inputManager, outputHandler, colors0)
 
   def currentLine(): Int =
